@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jotihunt Monitor</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --green: #1db954;
+            --yellow: #f1c40f;
+            --orange: #e67e22;
+            --red: #e74c3c;
+            --blue: #3498db;
+            --purple: #9b59b6;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Start Overlay om audio permissie te krijgen */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        #start-overlay button {
+            padding: 15px 30px; font-size: 20px; font-weight: bold;
+            background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer;
+        }
+
+        /* Alert Overlay */
+        #alert-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--red); z-index: 900;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            animation: flash 0.8s infinite; cursor: pointer;
+        }
+        #alert-overlay h1 { font-size: 40px; margin: 0; text-transform: uppercase; text-align: center; padding: 20px;}
+        #alert-overlay p { font-size: 20px; font-weight: bold; }
+        @keyframes flash { 0%, 49% { background: var(--red); } 50%, 100% { background: #000; } }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; background: var(--card-bg); border-bottom: 2px solid #333;
+        }
+        header h1 { margin: 0; font-size: 20px; }
+        
+        .settings label { margin-left: 15px; font-size: 14px; cursor: pointer; }
+        .settings input { margin-right: 5px; }
+
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        
+        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px; font-size: 18px; color: var(--text-muted); text-transform: uppercase; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        .fox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+
+        .card {
+            background: var(--card-bg); border-radius: 10px; padding: 15px;
+            display: flex; flex-direction: column; text-decoration: none; color: white;
+            border-left: 6px solid #333; transition: transform 0.2s; cursor: pointer;
+        }
+        .card:hover { transform: scale(1.02); }
+        .card-top { font-size: 12px; font-weight: bold; color: rgba(255,255,255,0.7); margin-bottom: 5px; display: flex; justify-content: space-between;}
+        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; word-break: break-word; }
+        .card-bottom { font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; align-items: flex-end; }
+        .card-status { padding: 4px 8px; border-radius: 4px; background: #333; }
+
+        /* Fox Card specific */
+        .fox-card { text-align: center; padding: 15px 10px; justify-content: center; align-items: center; }
+        .fox-name { font-size: 14px; font-weight: bold; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 5px;}
+        .fox-status { font-size: 22px; font-weight: bold; margin-bottom: 5px; }
+        .fox-since { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+        /* Colors */
+        .bg-green { border-color: var(--green); background: linear-gradient(145deg, #11381b, var(--card-bg));}
+        .bg-green .card-status, .bg-green .fox-status { color: var(--green); }
+        .bg-yellow { border-color: var(--yellow); background: linear-gradient(145deg, #3d350b, var(--card-bg));}
+        .bg-yellow .card-status, .bg-yellow .fox-status { color: var(--yellow); }
+        .bg-orange { border-color: var(--orange); background: linear-gradient(145deg, #42240b, var(--card-bg));}
+        .bg-orange .card-status, .bg-orange .fox-status { color: var(--orange); }
+        .bg-red { border-color: var(--red); background: linear-gradient(145deg, #421111, var(--card-bg));}
+        .bg-red .card-status, .bg-red .fox-status { color: var(--red); }
+        .bg-blue { border-color: var(--blue); background: linear-gradient(145deg, #0b253b, var(--card-bg));}
+        .bg-blue .card-status { color: var(--blue); }
+        .bg-purple { border-color: var(--purple); background: linear-gradient(145deg, #2a1036, var(--card-bg));}
+        .bg-purple .card-status { color: var(--purple); }
+
+    </style>
+</head>
+<body>
+
+<div id="start-overlay">
+    <button onclick="startMonitor()">Start Jotihunt Monitor</button>
+    <p style="margin-top: 15px; color: #ccc;">Klik om meldingen en geluid in te schakelen</p>
+</div>
+
+<div id="alert-overlay" onclick="stopAlert()">
+    <h1 id="alert-title">NIEUW BERICHT</h1>
+    <p>TIK OM TE STOPPEN</p>
+</div>
+
+<header>
+    <h1>🦊 Jotihunt Monitor</h1>
+    <div class="settings">
+        <label><input type="checkbox" id="toggle-sound" checked> Geluid</label>
+        <label><input type="checkbox" id="toggle-blink" checked> Knipperen</label>
+    </div>
+</header>
+
+<div class="container">
+    <h2>Actueel</h2>
+    <div class="grid" id="main-grid">
+        <!-- Hints, Opdrachten, Posts komen hier -->
+    </div>
+
+    <h2>Vossenstatus</h2>
+    <div class="fox-grid" id="fox-grid">
+        <!-- Vossen komen hier -->
+    </div>
+</div>
+
+<script>
+    const API_BASE = "https://jotihunt.nl/api/2.0";
+    let audioCtx = null;
+    let isAlerting = false;
+    let seenArticles = new Set();
+    let initialLoad = true;
+    let foxHistory = {};
+
+    const defaultFoxes = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "Oscar", "X-Ray"];
+
+    function startMonitor() {
+        document.getElementById('start-overlay').style.display = 'none';
+        // Init audio context
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        pollApi();
+        setInterval(pollApi, 5000);
+        setInterval(updateUI, 1000); // Live timers every second
+    }
+
+    // Audio Generator in JS (Zelfde tonen als je python script!)
+    function playAlarmSound() {
+        if (!document.getElementById('toggle-sound').checked || !audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        osc.type = "sine";
+        
+        // Eerste toon (880Hz)
+        osc.frequency.setValueAtTime(880, now);
+        gain.gain.setValueAtTime(0.85, now);
+        
+        // Stilte
+        gain.gain.setValueAtTime(0, now + 0.25);
+        
+        // Tweede toon (1320Hz)
+        osc.frequency.setValueAtTime(1320, now + 0.32);
+        gain.gain.setValueAtTime(0.95, now + 0.32);
+
+        osc.start(now);
+        osc.stop(now + 0.65);
+    }
+
+    function triggerAlert(title, typeName) {
+        if (!document.getElementById('toggle-blink').checked) {
+            playAlarmSound();
+            return;
+        }
+        isAlerting = true;
+        document.getElementById('alert-title').innerText = `${typeName}: ${title}`;
+        document.getElementById('alert-overlay').style.display = 'flex';
+        playAlarmSound();
+        // Speel geluid nog een keer na 1 sec
+        setTimeout(playAlarmSound, 1000);
+    }
+
+    function stopAlert() {
+        isAlerting = false;
+        document.getElementById('alert-overlay').style.display = 'none';
+    }
+
+    function parseDate(dateStr) {
+        if (!dateStr) return null;
+        return new Date(dateStr.replace("Z", "+00:00"));
+    }
+
+    function getPubTime(art) {
+        for (let field of ["published_at", "publish_at", "created_at", "start_at"]) {
+            if (art[field]) return parseDate(art[field]);
+        }
+        return null;
+    }
+
+    function formatDuration(ms) {
+        let mins = Math.floor(Math.max(0, ms) / 60000);
+        if (mins < 60) return `${mins}m`;
+        let hours = Math.floor(mins / 60);
+        let m = mins % 60;
+        return `${hours}u${m.toString().padStart(2, '0')}m`;
+    }
+
+    function classifyArticle(art) {
+        const rawType = (art.type || art.category || "").toLowerCase();
+        const title = (art.title || "").toLowerCase();
+        const content = (art.content || art.body || "").toLowerCase();
+        const maxPoints = art.max_points || art.points;
+
+        if (rawType.includes("hint")) return "hint";
+        if (rawType.includes("assignment") || rawType.includes("opdracht")) return "assignment";
+        if (rawType.includes("news") || rawType.includes("nieuws") || rawType.includes("post")) return "post";
+
+        if ((maxPoints && parseInt(maxPoints) > 0) || content.includes("wat willen we zien") || content.includes("bonuspunten")) return "assignment";
+        
+        let pub = getPubTime(art);
+        let end = parseDate(art.end_at);
+        if (pub && end && (end - pub)/60000 > 45) return "assignment";
+
+        const hintWords = ["say cheese", "wat de stenen fluisteren", "schotse les", "coordinaat", "coördinaat", "hint"];
+        if (hintWords.some(w => title.includes(w))) return "hint";
+        if (content.includes("alpha:") && content.includes("bravo:")) return "hint";
+        if (pub && end && (end - pub)/60000 <= 45) return "hint";
+
+        return "post";
+    }
+
+    let currentData = { hint: null, assignment: null, post: null, areas: [] };
+
+    async function pollApi() {
+        try {
+            // Fetch Articles
+            let artRes = await fetch(`${API_BASE}/articles`);
+            let artJson = await artRes.json();
+            let articles = artJson.data || [];
+            
+            // Sorteer nieuw -> oud
+            articles.sort((a,b) => (getPubTime(b) || 0) - (getPubTime(a) || 0));
+
+            let latestH = null, latestA = null, latestP = null;
+
+            for (let art of articles) {
+                let cat = classifyArticle(art);
+                if (cat === "hint" && !latestH) latestH = art;
+                if (cat === "assignment" && !latestA) latestA = art;
+                if (cat === "post" && !latestP) latestP = art;
+
+                let uid = art.id || art.title;
+                if (uid && !seenArticles.has(uid)) {
+                    seenArticles.add(uid);
+                    if (!initialLoad) {
+                        triggerAlert(art.title, cat.toUpperCase());
+                    }
+                }
+            }
+            currentData.hint = latestH;
+            currentData.assignment = latestA;
+            currentData.post = latestP;
+
+            // Fetch Areas
+            let areaRes = await fetch(`${API_BASE}/areas`);
+            let areaJson = await areaRes.json();
+            let areas = areaJson.data || [];
+            
+            let now = new Date();
+            let changedFox = null;
+
+            for (let a of areas) {
+                let name = a.name || a.title || "";
+                let status = a.status || a.state || a.color || "Onbekend";
+                let apiTime = parseDate(a.updated_at || a.last_change || a.created_at);
+                
+                if (name) {
+                    let cName = name.toLowerCase();
+                    let prev = foxHistory[cName];
+                    if (prev && prev.status.toLowerCase() !== status.toLowerCase()) {
+                        foxHistory[cName] = { status: status, since: apiTime || now };
+                        if (!initialLoad && !changedFox) changedFox = {name, status};
+                    } else if (!prev) {
+                        foxHistory[cName] = { status: status, since: apiTime || now };
+                    }
+                }
+            }
+            currentData.areas = areas;
+
+            if (changedFox && !initialLoad) {
+                triggerAlert(`${changedFox.status}`, `VOS ${changedFox.name.toUpperCase()}`);
+            }
+
+            initialLoad = false;
+            updateUI();
+
+        } catch (e) {
+            console.error("API Fetch Error:", e);
+        }
+    }
+
+    function updateUI() {
+        if (initialLoad) return;
+        let now = new Date();
+
+        // --- Render Main Grid ---
+        let mainHtml = "";
+
+        // 1. Hint
+        if (currentData.hint) {
+            let art = currentData.hint;
+            let pub = getPubTime(art);
+            let col = "bg-blue", statusTxt = "BEKIJKEN", timeTxt = "--:--";
+            if (pub) {
+                timeTxt = pub.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                let elapsedMs = now - pub;
+                let elapsedMin = Math.max(0, elapsedMs) / 60000;
+                
+                if (elapsedMin < 15) { col = "bg-green"; statusTxt = `NOG ${Math.max(1, 20-Math.floor(elapsedMin))}m (100%)`; }
+                else if (elapsedMin < 20) { col = "bg-yellow"; statusTxt = `NOG ${Math.max(1, 20-Math.floor(elapsedMin))}m HAAST!`; }
+                else if (elapsedMin < 30) { col = "bg-red"; statusTxt = "0 PUNTEN"; }
+                else { statusTxt = "AFGEROND"; }
+            }
+            mainHtml += `<a href="https://jotihunt.nl" target="_blank" class="card ${col}">
+                <div class="card-top"><span>HINT | ${timeTxt}</span><span>VOSSEN</span></div>
+                <div class="card-title">${art.title}</div>
+                <div class="card-bottom"><span class="card-status">${statusTxt}</span><span>OPENEN ↗</span></div>
+            </a>`;
+        }
+
+        // 2. Opdracht
+        if (currentData.assignment) {
+            let art = currentData.assignment;
+            let end = parseDate(art.end_at);
+            let pts = art.max_points || art.points ? `${art.max_points || art.points}PT` : "OPDRACHT";
+            let col = "bg-blue", statusTxt = "BEKIJKEN", timeTxt = "TOT --:--";
+            
+            if (end) {
+                timeTxt = `TOT ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                let diffMs = end - now;
+                if (diffMs > 25*60000) { col = "bg-green"; statusTxt = `NOG ${formatDuration(diffMs)}`; }
+                else if (diffMs > 0) { col = "bg-yellow"; statusTxt = `${formatDuration(diffMs)} HAAST!`; }
+                else { col = "bg-red"; statusTxt = "VERLOPEN"; }
+            }
+            mainHtml += `<a href="https://jotihunt.nl" target="_blank" class="card ${col}">
+                <div class="card-top"><span>${pts} | ${timeTxt}</span><span>KNUTSEL / FOTO</span></div>
+                <div class="card-title">${art.title}</div>
+                <div class="card-bottom"><span class="card-status">${statusTxt}</span><span>OPENEN ↗</span></div>
+            </a>`;
+        }
+
+        // 3. Post
+        if (currentData.post) {
+            let art = currentData.post;
+            let pub = getPubTime(art);
+            let timeTxt = pub ? pub.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
+            mainHtml += `<a href="https://jotihunt.nl" target="_blank" class="card bg-purple">
+                <div class="card-top"><span>BERICHT | ${timeTxt}</span><span>ORGANISATIE</span></div>
+                <div class="card-title">${art.title}</div>
+                <div class="card-bottom"><span class="card-status">MEDEDELING</span><span>LEZEN ↗</span></div>
+            </a>`;
+        }
+        document.getElementById('main-grid').innerHTML = mainHtml;
+
+        // --- Render Foxes ---
+        let foxHtml = "";
+        let displayedFoxes = new Set();
+        
+        // Meng default vossen met eventuele nieuwe API vossen
+        let allFoxes = [...currentData.areas];
+        for (let d of defaultFoxes) {
+            if (!allFoxes.find(a => (a.name||a.title||"").toLowerCase() === d.toLowerCase())) {
+                allFoxes.push({name: d, status: "Onbekend"});
+            }
+        }
+        allFoxes.sort((a,b) => (a.name||a.title||"").localeCompare(b.name||b.title||""));
+
+        for (let f of allFoxes) {
+            let name = f.name || f.title || "";
+            if (!name || displayedFoxes.has(name.toLowerCase())) continue;
+            displayedFoxes.add(name.toLowerCase());
+
+            let hist = foxHistory[name.toLowerCase()] || {};
+            let st = hist.status || "Onbekend";
+            let stLower = st.toLowerCase();
+            let since = hist.since;
+            let col = "";
+            let stDisplay = st.toUpperCase();
+
+            if (stLower.includes("groen") || stLower.includes("open")) { col = "bg-green"; stDisplay = "GROEN"; }
+            else if (stLower.includes("oranje") || stLower.includes("geel")) { col = "bg-orange"; stDisplay = "ORANJE"; }
+            else if (stLower.includes("rood") || stLower.includes("rust")) { col = "bg-red"; stDisplay = "ROOD"; }
+            
+            let durTxt = since ? `SINDS ${formatDuration(now - since)}` : "SINDS --";
+
+            foxHtml += `<a href="https://jotihunt.nl" target="_blank" class="card fox-card ${col}">
+                <div class="fox-name">VOS ${name.toUpperCase()}</div>
+                <div class="fox-status">${stDisplay}</div>
+                <div class="fox-since">${durTxt}</div>
+            </a>`;
+        }
+        document.getElementById('fox-grid').innerHTML = foxHtml;
+    }
+</script>
+</body>
+</html>
