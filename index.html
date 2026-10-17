@@ -6,107 +6,156 @@
     <title>Jotihunt Monitor</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
+            --bg-color: #0f1115;
+            --card-bg: #181b22;
             --text-main: #ffffff;
-            --text-muted: #a0a0a0;
-            --green: #1db954;
-            --yellow: #f1c40f;
-            --orange: #e67e22;
-            --red: #e74c3c;
-            --blue: #3498db;
-            --purple: #9b59b6;
+            --text-muted: #9aa0a6;
+            
+            --c-green: #1b8a3e;
+            --c-green-border: #2ecc71;
+            --c-yellow: #b58900;
+            --c-yellow-border: #f1c40f;
+            --c-orange: #d35400;
+            --c-orange-border: #e67e22;
+            --c-red: #b71c1c;
+            --c-red-border: #e74c3c;
+            --c-blue: #1565c0;
+            --c-blue-border: #3498db;
+            --c-purple: #6a1b9a;
+            --c-purple-border: #9b59b6;
         }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html {
-            margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             overflow-x: hidden;
+            line-height: 1.4;
         }
 
-        /* Start Overlay om audio permissie te krijgen */
+        /* Start Overlay */
         #start-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(10, 12, 16, 0.95); z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;
         }
         #start-overlay button {
-            padding: 15px 30px; font-size: 20px; font-weight: bold;
-            background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer;
+            padding: 16px 36px; font-size: 20px; font-weight: bold;
+            background: #2563eb; color: white; border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(37,99,235,0.4); transition: transform 0.15s;
         }
+        #start-overlay button:active { transform: scale(0.96); }
 
-        /* Alert Overlay */
+        /* Alarm Strobe */
         #alert-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--red); z-index: 900;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            animation: flash 0.8s infinite; cursor: pointer;
+            z-index: 900; display: none; flex-direction: column; justify-content: center; align-items: center;
+            animation: flash 0.8s infinite; cursor: pointer; text-align: center; padding: 20px;
         }
-        #alert-overlay h1 { font-size: 40px; margin: 0; text-transform: uppercase; text-align: center; padding: 20px;}
-        #alert-overlay p { font-size: 20px; font-weight: bold; }
-        @keyframes flash { 0%, 49% { background: var(--red); } 50%, 100% { background: #000; } }
+        #alert-overlay h1 { font-size: 38px; text-transform: uppercase; margin-bottom: 10px; font-weight: 900; }
+        #alert-overlay p { font-size: 18px; font-weight: bold; opacity: 0.8; }
+        @keyframes flash { 0%, 49% { background: #b71c1c; color: white; } 50%, 100% { background: #000; color: #ff5252; } }
+
+        /* Detail Modal */
+        #detail-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75); z-index: 950; display: none;
+            justify-content: center; align-items: center; padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .modal-box {
+            background: #1e222b; border: 2px solid #383f4f; border-radius: 14px;
+            width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto;
+            padding: 24px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .modal-badge { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; margin-bottom: 10px; }
+        .modal-title { font-size: 22px; font-weight: 800; margin-bottom: 12px; }
+        .modal-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .info-cell { background: #13161c; border-radius: 8px; padding: 10px; }
+        .info-cell span { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+        .info-cell strong { font-size: 14px; color: white; }
+        .modal-content { font-size: 14px; color: #d1d5db; white-space: pre-wrap; margin: 15px 0; border-top: 1px solid #2d3340; padding-top: 15px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-actions a, .modal-actions button {
+            flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; border: none;
+        }
+        .btn-link { background: #2563eb; color: white; }
+        .btn-close { background: #374151; color: white; }
 
         header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 20px; background: var(--card-bg); border-bottom: 2px solid #333;
+            padding: 14px 20px; background: #13161d; border-bottom: 1px solid #262c37;
         }
-        header h1 { margin: 0; font-size: 20px; }
-        
-        .settings label { margin-left: 15px; font-size: 14px; cursor: pointer; }
-        .settings input { margin-right: 5px; }
+        header h1 { font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }
+        .settings label { margin-left: 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: #cbd5e1; }
+        .settings input { margin-right: 4px; accent-color: #2563eb; }
 
-        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
-        
-        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px; font-size: 18px; color: var(--text-muted); text-transform: uppercase; }
+        .container { padding: 15px 20px 40px; max-width: 1200px; margin: 0 auto; }
+        h2 { font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); margin: 25px 0 12px; }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        .fox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+        .fox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
 
         .card {
-            background: var(--card-bg); border-radius: 10px; padding: 15px;
+            border-radius: 10px; padding: 14px;
             display: flex; flex-direction: column; text-decoration: none; color: white;
-            border-left: 6px solid #333; transition: transform 0.2s; cursor: pointer;
+            border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+            position: relative; overflow: hidden;
         }
-        .card:hover { transform: scale(1.02); }
-        .card-top { font-size: 12px; font-weight: bold; color: rgba(255,255,255,0.7); margin-bottom: 5px; display: flex; justify-content: space-between;}
-        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; word-break: break-word; }
-        .card-bottom { font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; align-items: flex-end; }
-        .card-status { padding: 4px 8px; border-radius: 4px; background: #333; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
 
-        /* Fox Card specific */
-        .fox-card { text-align: center; padding: 15px 10px; justify-content: center; align-items: center; }
-        .fox-name { font-size: 14px; font-weight: bold; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 5px;}
-        .fox-status { font-size: 22px; font-weight: bold; margin-bottom: 5px; }
-        .fox-since { font-size: 11px; color: rgba(255,255,255,0.7); }
+        .card-top { font-size: 11px; font-weight: 800; text-transform: uppercase; opacity: 0.9; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .card-title { font-size: 17px; font-weight: 800; margin-bottom: 12px; min-height: 42px; word-break: break-word; }
+        .card-bottom { font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .card-status { padding: 4px 9px; border-radius: 6px; background: rgba(0,0,0,0.3); font-weight: 800; }
+        .card-hint { font-size: 11px; opacity: 0.85; }
 
-        /* Colors */
-        .bg-green { border-color: var(--green); background: linear-gradient(145deg, #11381b, var(--card-bg));}
-        .bg-green .card-status, .bg-green .fox-status { color: var(--green); }
-        .bg-yellow { border-color: var(--yellow); background: linear-gradient(145deg, #3d350b, var(--card-bg));}
-        .bg-yellow .card-status, .bg-yellow .fox-status { color: var(--yellow); }
-        .bg-orange { border-color: var(--orange); background: linear-gradient(145deg, #42240b, var(--card-bg));}
-        .bg-orange .card-status, .bg-orange .fox-status { color: var(--orange); }
-        .bg-red { border-color: var(--red); background: linear-gradient(145deg, #421111, var(--card-bg));}
-        .bg-red .card-status, .bg-red .fox-status { color: var(--red); }
-        .bg-blue { border-color: var(--blue); background: linear-gradient(145deg, #0b253b, var(--card-bg));}
-        .bg-blue .card-status { color: var(--blue); }
-        .bg-purple { border-color: var(--purple); background: linear-gradient(145deg, #2a1036, var(--card-bg));}
-        .bg-purple .card-status { color: var(--purple); }
+        /* Vos Cards */
+        .fox-card { text-align: center; padding: 16px 8px; justify-content: center; align-items: center; min-height: 100px; }
+        .fox-name { font-size: 12px; font-weight: 800; text-transform: uppercase; opacity: 0.9; margin-bottom: 4px; letter-spacing: 1px; }
+        .fox-status { font-size: 21px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 4px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .fox-since { font-size: 11px; font-weight: 700; opacity: 0.9; }
 
+        /* Felle en duidelijke kleuren */
+        .c-green  { background: linear-gradient(145deg, #166534, #14532d); border-color: var(--c-green-border); }
+        .c-yellow { background: linear-gradient(145deg, #854d0e, #713f12); border-color: var(--c-yellow-border); }
+        .c-orange { background: linear-gradient(145deg, #9a3412, #7c2d12); border-color: var(--c-orange-border); }
+        .c-red    { background: linear-gradient(145deg, #991b1b, #7f1d1d); border-color: var(--c-red-border); }
+        .c-blue   { background: linear-gradient(145deg, #1e40af, #1e3a8a); border-color: var(--c-blue-border); }
+        .c-purple { background: linear-gradient(145deg, #6b21a8, #581c87); border-color: var(--c-purple-border); }
+        .c-gray   { background: #1e222b; border-color: #383f4f; }
     </style>
 </head>
 <body>
 
 <div id="start-overlay">
     <button onclick="startMonitor()">Start Jotihunt Monitor</button>
-    <p style="margin-top: 15px; color: #ccc;">Klik om meldingen en geluid in te schakelen</p>
+    <p style="margin-top: 14px; font-size: 13px; color: #94a3b8;">Tik hier om live audio & meldingen in te schakelen</p>
 </div>
 
 <div id="alert-overlay" onclick="stopAlert()">
     <h1 id="alert-title">NIEUW BERICHT</h1>
-    <p>TIK OM TE STOPPEN</p>
+    <p>TIK OM HET ALARM TE STOPPEN</p>
+</div>
+
+<!-- Extra Info Modal -->
+<div id="detail-modal" onclick="closeModalOnBg(event)">
+    <div class="modal-box">
+        <div id="modal-badge" class="modal-badge">INFO</div>
+        <div id="modal-title" class="modal-title">Titel</div>
+        
+        <div class="modal-info-grid" id="modal-grid">
+            <!-- Dynamisch gevuld -->
+        </div>
+
+        <div id="modal-content" class="modal-content">Geen inhoud beschikbaar.</div>
+
+        <div class="modal-actions">
+            <a id="modal-link" href="https://jotihunt.nl" target="_blank" class="btn-link">Bekijk op Jotihunt.nl ↗</a>
+            <button onclick="closeModal()" class="btn-close">Sluiten</button>
+        </div>
+    </div>
 </div>
 
 <header>
@@ -120,12 +169,12 @@
 <div class="container">
     <h2>Actueel</h2>
     <div class="grid" id="main-grid">
-        <!-- Hints, Opdrachten, Posts komen hier -->
+        <!-- Hints, Opdrachten, Posts -->
     </div>
 
     <h2>Vossenstatus</h2>
     <div class="fox-grid" id="fox-grid">
-        <!-- Vossen komen hier -->
+        <!-- Vossen -->
     </div>
 </div>
 
@@ -138,18 +187,17 @@
     let foxHistory = {};
 
     const defaultFoxes = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "Oscar", "X-Ray"];
+    let currentData = { hint: null, assignment: null, post: null, areas: [] };
 
     function startMonitor() {
         document.getElementById('start-overlay').style.display = 'none';
-        // Init audio context
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         pollApi();
         setInterval(pollApi, 5000);
-        setInterval(updateUI, 1000); // Live timers every second
+        setInterval(updateUI, 1000);
     }
 
-    // Audio Generator in JS (Zelfde tonen als je python script!)
     function playAlarmSound() {
         if (!document.getElementById('toggle-sound').checked || !audioCtx) return;
         
@@ -161,14 +209,9 @@
         const now = audioCtx.currentTime;
         osc.type = "sine";
         
-        // Eerste toon (880Hz)
         osc.frequency.setValueAtTime(880, now);
         gain.gain.setValueAtTime(0.85, now);
-        
-        // Stilte
         gain.gain.setValueAtTime(0, now + 0.25);
-        
-        // Tweede toon (1320Hz)
         osc.frequency.setValueAtTime(1320, now + 0.32);
         gain.gain.setValueAtTime(0.95, now + 0.32);
 
@@ -185,7 +228,6 @@
         document.getElementById('alert-title').innerText = `${typeName}: ${title}`;
         document.getElementById('alert-overlay').style.display = 'flex';
         playAlarmSound();
-        // Speel geluid nog een keer na 1 sec
         setTimeout(playAlarmSound, 1000);
     }
 
@@ -200,6 +242,7 @@
     }
 
     function getPubTime(art) {
+        if (!art) return null;
         for (let field of ["published_at", "publish_at", "created_at", "start_at"]) {
             if (art[field]) return parseDate(art[field]);
         }
@@ -238,16 +281,12 @@
         return "post";
     }
 
-    let currentData = { hint: null, assignment: null, post: null, areas: [] };
-
     async function pollApi() {
         try {
-            // Fetch Articles
             let artRes = await fetch(`${API_BASE}/articles`);
             let artJson = await artRes.json();
             let articles = artJson.data || [];
             
-            // Sorteer nieuw -> oud
             articles.sort((a,b) => (getPubTime(b) || 0) - (getPubTime(a) || 0));
 
             let latestH = null, latestA = null, latestP = null;
@@ -308,74 +347,178 @@
         }
     }
 
+    // Modal Helpers
+    function openModal(data) {
+        document.getElementById('modal-badge').innerText = data.badge || "INFO";
+        document.getElementById('modal-badge').style.background = data.badgeColor || "#2563eb";
+        document.getElementById('modal-title').innerText = data.title || "";
+        
+        let gridHtml = "";
+        for (let cell of (data.cells || [])) {
+            gridHtml += `<div class="info-cell"><span>${cell.label}</span><strong>${cell.value}</strong></div>`;
+        }
+        document.getElementById('modal-grid').innerHTML = gridHtml;
+        document.getElementById('modal-content').innerText = data.content || "Geen verdere omschrijving.";
+        document.getElementById('modal-link').href = data.link || "https://jotihunt.nl";
+        document.getElementById('detail-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('detail-modal').style.display = 'none';
+    }
+
+    function closeModalOnBg(e) {
+        if (e.target.id === 'detail-modal') closeModal();
+    }
+
+    function inspectFox(foxName) {
+        let hist = foxHistory[foxName.toLowerCase()] || {};
+        let status = hist.status || "Onbekend";
+        let now = new Date();
+        let dur = hist.since ? formatDuration(now - hist.since) : "--";
+        let timeStr = hist.since ? hist.since.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "--:--";
+
+        openModal({
+            badge: "VOS STATUS",
+            badgeColor: "#166534",
+            title: `Vos ${foxName}`,
+            cells: [
+                { label: "Huidige Status", value: status.toUpperCase() },
+                { label: "Actief Sinds", value: `${dur} (${timeStr})` },
+                { label: "Deelgebied", value: foxName },
+                { label: "Verificatie", value: "Live GPS" }
+            ],
+            content: `Vos ${foxName} staat momenteel op status ${status.toUpperCase()}.\n\nKlik hieronder om direct naar de live Jotihunt Kaart te gaan voor de meest actuele hunts en coördinaten.`,
+            link: "https://jotihunt.nl"
+        });
+    }
+
+    function inspectHint() {
+        let art = currentData.hint;
+        if (!art) return;
+        let pub = getPubTime(art);
+        let now = new Date();
+        let elapsed = pub ? formatDuration(now - pub) : "--";
+        let pubStr = pub ? pub.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "--:--";
+
+        openModal({
+            badge: "HINT INSPECTIE",
+            badgeColor: "#1e40af",
+            title: art.title,
+            cells: [
+                { label: "Publicatietijd", value: pubStr },
+                { label: "Verstreken Tijd", value: elapsed },
+                { label: "Deadline", value: "20 minuten" },
+                { label: "Punten Status", value: "Zie actueel vlak" }
+            ],
+            content: art.content || art.body || "Geen extra tekstinhoud opgegeven.",
+            link: "https://jotihunt.nl"
+        });
+    }
+
+    function inspectAssignment() {
+        let art = currentData.assignment;
+        if (!art) return;
+        let end = parseDate(art.end_at);
+        let endStr = end ? end.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "--:--";
+        let pts = art.max_points || art.points ? `${art.max_points || art.points} Punten` : "Opdracht";
+
+        openModal({
+            badge: "OPDRACHT INSPECTIE",
+            badgeColor: "#854d0e",
+            title: art.title,
+            cells: [
+                { label: "Max Score", value: pts },
+                { label: "Eindtijd", value: endStr },
+                { label: "Categorie", value: "Knutsel / Foto / Doe" },
+                { label: "Status", value: "Actief" }
+            ],
+            content: art.content || art.body || "Wat willen we zien: Bekijk de volledige criteria op de Jotihunt website.",
+            link: "https://jotihunt.nl"
+        });
+    }
+
+    function inspectPost() {
+        let art = currentData.post;
+        if (!art) return;
+        let pub = getPubTime(art);
+        let pubStr = pub ? pub.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "--:--";
+
+        openModal({
+            badge: "ORGANISATIE BERICHT",
+            badgeColor: "#6b21a8",
+            title: art.title,
+            cells: [
+                { label: "Geplaatst om", value: pubStr },
+                { label: "Afzender", value: "Hoofdkwartier" }
+            ],
+            content: art.content || art.body || "Mededeling van de organisatie.",
+            link: "https://jotihunt.nl"
+        });
+    }
+
     function updateUI() {
         if (initialLoad) return;
         let now = new Date();
 
-        // --- Render Main Grid ---
+        // 1. Actueel Grid
         let mainHtml = "";
 
-        // 1. Hint
         if (currentData.hint) {
             let art = currentData.hint;
             let pub = getPubTime(art);
-            let col = "bg-blue", statusTxt = "BEKIJKEN", timeTxt = "--:--";
+            let col = "c-blue", statusTxt = "BEKIJKEN", timeTxt = "--:--";
             if (pub) {
                 timeTxt = pub.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                let elapsedMs = now - pub;
-                let elapsedMin = Math.max(0, elapsedMs) / 60000;
-                
-                if (elapsedMin < 15) { col = "bg-green"; statusTxt = `NOG ${Math.max(1, 20-Math.floor(elapsedMin))}m (100%)`; }
-                else if (elapsedMin < 20) { col = "bg-yellow"; statusTxt = `NOG ${Math.max(1, 20-Math.floor(elapsedMin))}m HAAST!`; }
-                else if (elapsedMin < 30) { col = "bg-red"; statusTxt = "0 PUNTEN"; }
+                let elapsedMin = Math.max(0, (now - pub) / 60000);
+                if (elapsedMin < 15) { col = "c-green"; statusTxt = `NOG ${Math.max(1, 20-Math.floor(elapsedMin))}m (100%)`; }
+                else if (elapsedMin < 20) { col = "c-yellow"; statusTxt = `NOG ${Math.max(1, 20-Math.floor(elapsedMin))}m HAAST!`; }
+                else if (elapsedMin < 30) { col = "c-red"; statusTxt = "0 PUNTEN"; }
                 else { statusTxt = "AFGEROND"; }
             }
-            mainHtml += `<a href="https://jotihunt.nl" target="_blank" class="card ${col}">
+            mainHtml += `<div onclick="inspectHint()" class="card ${col}">
                 <div class="card-top"><span>HINT | ${timeTxt}</span><span>VOSSEN</span></div>
                 <div class="card-title">${art.title}</div>
-                <div class="card-bottom"><span class="card-status">${statusTxt}</span><span>OPENEN ↗</span></div>
-            </a>`;
+                <div class="card-bottom"><span class="card-status">${statusTxt}</span><span class="card-hint">INFO ℹ️</span></div>
+            </div>`;
         }
 
-        // 2. Opdracht
         if (currentData.assignment) {
             let art = currentData.assignment;
             let end = parseDate(art.end_at);
             let pts = art.max_points || art.points ? `${art.max_points || art.points}PT` : "OPDRACHT";
-            let col = "bg-blue", statusTxt = "BEKIJKEN", timeTxt = "TOT --:--";
+            let col = "c-blue", statusTxt = "BEKIJKEN", timeTxt = "TOT --:--";
             
             if (end) {
                 timeTxt = `TOT ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 let diffMs = end - now;
-                if (diffMs > 25*60000) { col = "bg-green"; statusTxt = `NOG ${formatDuration(diffMs)}`; }
-                else if (diffMs > 0) { col = "bg-yellow"; statusTxt = `${formatDuration(diffMs)} HAAST!`; }
-                else { col = "bg-red"; statusTxt = "VERLOPEN"; }
+                if (diffMs > 25*60000) { col = "c-green"; statusTxt = `NOG ${formatDuration(diffMs)}`; }
+                else if (diffMs > 0) { col = "c-yellow"; statusTxt = `${formatDuration(diffMs)} HAAST!`; }
+                else { col = "c-red"; statusTxt = "VERLOPEN"; }
             }
-            mainHtml += `<a href="https://jotihunt.nl" target="_blank" class="card ${col}">
+            mainHtml += `<div onclick="inspectAssignment()" class="card ${col}">
                 <div class="card-top"><span>${pts} | ${timeTxt}</span><span>KNUTSEL / FOTO</span></div>
                 <div class="card-title">${art.title}</div>
-                <div class="card-bottom"><span class="card-status">${statusTxt}</span><span>OPENEN ↗</span></div>
-            </a>`;
+                <div class="card-bottom"><span class="card-status">${statusTxt}</span><span class="card-hint">INFO ℹ️</span></div>
+            </div>`;
         }
 
-        // 3. Post
         if (currentData.post) {
             let art = currentData.post;
             let pub = getPubTime(art);
             let timeTxt = pub ? pub.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
-            mainHtml += `<a href="https://jotihunt.nl" target="_blank" class="card bg-purple">
+            mainHtml += `<div onclick="inspectPost()" class="card c-purple">
                 <div class="card-top"><span>BERICHT | ${timeTxt}</span><span>ORGANISATIE</span></div>
                 <div class="card-title">${art.title}</div>
-                <div class="card-bottom"><span class="card-status">MEDEDELING</span><span>LEZEN ↗</span></div>
-            </a>`;
+                <div class="card-bottom"><span class="card-status">MEDEDELING</span><span class="card-hint">LEZEN ℹ️</span></div>
+            </div>`;
         }
         document.getElementById('main-grid').innerHTML = mainHtml;
 
-        // --- Render Foxes ---
+        // 2. Vossen Grid
         let foxHtml = "";
         let displayedFoxes = new Set();
         
-        // Meng default vossen met eventuele nieuwe API vossen
         let allFoxes = [...currentData.areas];
         for (let d of defaultFoxes) {
             if (!allFoxes.find(a => (a.name||a.title||"").toLowerCase() === d.toLowerCase())) {
@@ -393,20 +536,25 @@
             let st = hist.status || "Onbekend";
             let stLower = st.toLowerCase();
             let since = hist.since;
-            let col = "";
+            let col = "c-gray";
             let stDisplay = st.toUpperCase();
 
-            if (stLower.includes("groen") || stLower.includes("open")) { col = "bg-green"; stDisplay = "GROEN"; }
-            else if (stLower.includes("oranje") || stLower.includes("geel")) { col = "bg-orange"; stDisplay = "ORANJE"; }
-            else if (stLower.includes("rood") || stLower.includes("rust")) { col = "bg-red"; stDisplay = "ROOD"; }
+            // Robuuste Engelse én Nederlandse status matching
+            if (stLower.includes("groen") || stLower.includes("green") || stLower.includes("open") || stLower.includes("huntable")) {
+                col = "c-green"; stDisplay = "GROEN";
+            } else if (stLower.includes("oranje") || stLower.includes("orange") || stLower.includes("geel") || stLower.includes("yellow") || stLower.includes("verplaatst")) {
+                col = "c-orange"; stDisplay = "ORANJE";
+            } else if (stLower.includes("rood") || stLower.includes("red") || stLower.includes("gehunt") || stLower.includes("hunted") || stLower.includes("rust") || stLower.includes("sleep")) {
+                col = "c-red"; stDisplay = "ROOD";
+            }
             
             let durTxt = since ? `SINDS ${formatDuration(now - since)}` : "SINDS --";
 
-            foxHtml += `<a href="https://jotihunt.nl" target="_blank" class="card fox-card ${col}">
+            foxHtml += `<div onclick="inspectFox('${name}')" class="card fox-card ${col}">
                 <div class="fox-name">VOS ${name.toUpperCase()}</div>
                 <div class="fox-status">${stDisplay}</div>
                 <div class="fox-since">${durTxt}</div>
-            </a>`;
+            </div>`;
         }
         document.getElementById('fox-grid').innerHTML = foxHtml;
     }
